@@ -4,9 +4,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
@@ -20,6 +22,7 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.io.UnsupportedEncodingException;
 import java.security.KeyStore;
+import java.util.List;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
@@ -27,10 +30,11 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
 public class MainActivity extends AppCompatActivity {
-    private EditText  pass, orgId, deviceType, deviceId;
+    private EditText pass, orgId, deviceType, deviceId;
     private TextView info;
     private Button connect, publish;
     private CheckBox boxSubscribe;
+
     private static final String TAG = "log_tag";
     private static final String IOT_ORGANIZATION_TCP = ".messaging.internetofthings.ibmcloud.com:1883";
     private static final String IOT_ORGANIZATION_SSL = ".messaging.internetofthings.ibmcloud.com:8883";
@@ -50,13 +54,10 @@ public class MainActivity extends AppCompatActivity {
         connect.setOnClickListener(buttonConnect);
 
         pass = (EditText) findViewById(R.id.etPass);
-
         orgId = (EditText) findViewById(R.id.etOrgId);
         deviceType = (EditText) findViewById(R.id.etDevType);
         deviceId = (EditText) findViewById(R.id.etDevId);
         info = (TextView) findViewById(R.id.textInfo);
-
-
 
         orgId.setText("p9p0l7");
         deviceType.setText("android3");
@@ -74,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
         String device_Id = deviceId.getText().toString();
         String authorizationToken = pass.getText().toString();
         String clientID = String.format("d:%s:%s:%s", organization, deviceT, device_Id);
-      //  String clientID = "d:" + dev.getOrganization() + ":" + dev.getDeviceType() + ":" + dev.getDeviceID();
+
         String connectionURI;
         if (factory == null) {
             connectionURI = "tcp://" + organization + IOT_ORGANIZATION_TCP;
@@ -89,31 +90,31 @@ public class MainActivity extends AppCompatActivity {
                 client = null;
             }
         }
-            client = new MqttAndroidClient(this, connectionURI, clientID);
-            client.setCallback(mqttCallback);
+        client = new MqttAndroidClient(this, connectionURI, clientID);
+        client.setCallback(mqttCallback);
 
-            String username = IOT_DEVICE_USERNAME;
-            char[] password = authorizationToken.toCharArray();
+        String username = IOT_DEVICE_USERNAME;
+        char[] password = authorizationToken.toCharArray();
 
-            MqttConnectOptions options = new MqttConnectOptions();
-            options.setCleanSession(true);
-            options.setUserName(username);
-            options.setPassword(password);
+        MqttConnectOptions options = new MqttConnectOptions();
+        options.setCleanSession(true);
+        options.setUserName(username);
+        options.setPassword(password);
 
-            if (factory != null) {
-                options.setSocketFactory(factory);
-            }
+        if (factory != null) {
+            options.setSocketFactory(factory);
+        }
 
-            Log.i(TAG, "Connecting to server: " + connectionURI);
-            Log.i(TAG, "ClientId: " + clientID);
+        Log.i(TAG, "Connecting to server: " + connectionURI);
+        Log.i(TAG, "ClientId: " + clientID);
 
-            try {
-                // connect
-                client.connect(options, this, mqttActionListener);
-            } catch (MqttException e) {
-                Log.e(TAG, "Exception caught while attempting to connect to server", e.getCause());
-                throw e;
-            }
+        try {
+            // connect
+            client.connect(options, this, mqttActionListener);
+        } catch (MqttException e) {
+            Log.e(TAG, "Exception caught while attempting to connect to server", e.getCause());
+            throw e;
+        }
 
 
         return null;
@@ -123,14 +124,17 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onSuccess(IMqttToken asyncActionToken) {
             Log.i(TAG, "Connected success: ");
-            String topic = "iot-2/cmd/+/fmt/json";
+            info.setText("Connected success: ");
+            String topic = "iot-2/cmd/#/fmt/json";
             if (boxSubscribe.isChecked()) {
                 try {
-                    client.subscribe(topic,0);
+                    client.subscribe(topic, 0);
 
                     Log.i(TAG, "Subscribed");
+
                 } catch (MqttException e) {
                     Log.i(TAG, "Subscribe failed");
+
                     e.printStackTrace();
                 }
             }
@@ -150,12 +154,16 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void messageArrived(String topic, MqttMessage message) throws Exception {
-            Log.i(TAG, "messageArrived: ");
+            Log.i(TAG, "messageArrived: "+topic+" message: "+message);
         }
 
         @Override
         public void deliveryComplete(IMqttDeliveryToken token) {
-            Log.i(TAG, "deliveryComplete: ");
+            try {
+                Log.i(TAG, "deliveryComplete: "+token.getMessage());
+            } catch (MqttException e) {
+                e.printStackTrace();
+            }
         }
     };
 
@@ -211,10 +219,32 @@ public class MainActivity extends AppCompatActivity {
         public void onClick(View v) {
 
             String topic = "iot-2/evt/audio/fmt/json";
+
+           String json="{\n" +
+                   "  \"data\": [\n" +
+                   "    {\n" +
+                   "      \"zcr\": 0.009765625,\n" +
+                   "      \"mfcc\": [\n" +
+                   "        -544.4432787871278,\n" +
+                   "        -556.3128752933909,\n" +
+                   "        -407.4832942024688,\n" +
+                   "        -269.775470084645,\n" +
+                   "        -149.72393603575634,\n" +
+                   "        -89.44205880437549,\n" +
+                   "        -81.03000790354855,\n" +
+                   "        -101.60580005563173,\n" +
+                   "        -111.56897345800866,\n" +
+                   "        -92.6221863470417,\n" +
+                   "        -46.397159840702564,\n" +
+                   "        -0.5242996098177828,\n" +
+                   "        16.885874747546353,\n" +
+                   "        -9.774112580427841\n" +
+                   "      ]\n" +
+                   "    }";
             try {
                 client.publish(
                         topic,
-                        "payload".getBytes("UTF-8"),
+                        json.getBytes("UTF-8"),
                         1,
                         false);
                 Log.i(TAG, "publish ");
@@ -223,4 +253,5 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
+
 }
