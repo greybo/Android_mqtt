@@ -1,10 +1,13 @@
-package com.example.android_mqtt_ssl;
+package com.example.android_mqtt;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-
-import com.example.android_mqtt_ssl.model.Device;
+import android.view.View;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.EditText;
+import android.widget.TextView;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
 import org.eclipse.paho.client.mqttv3.IMqttActionListener;
@@ -15,6 +18,7 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
+import java.io.UnsupportedEncodingException;
 import java.security.KeyStore;
 
 import javax.net.SocketFactory;
@@ -23,51 +27,73 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
 public class MainActivity extends AppCompatActivity {
-
+    private EditText  pass, orgId, deviceType, deviceId;
+    private TextView info;
+    private Button connect, publish;
+    private CheckBox boxSubscribe;
     private static final String TAG = "log_tag";
     private static final String IOT_ORGANIZATION_TCP = ".messaging.internetofthings.ibmcloud.com:1883";
     private static final String IOT_ORGANIZATION_SSL = ".messaging.internetofthings.ibmcloud.com:8883";
     private static final String IOT_DEVICE_USERNAME = "use-token-auth";
-    private static Device dev = new Device();
+
     private MqttAndroidClient client;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        dev.setOrganization("p9p0l7");
-        dev.setDeviceType("android3");
-        dev.setDeviceID("333");
-        dev.setAuthorizationToken("glNpI(@qHs2VlVS&ac");
 
-        try {
-            connectDevice();
-        } catch (MqttException e) {
-            e.printStackTrace();
-        }
+        info = (TextView) findViewById(R.id.textInfo);
+        connect = (Button) findViewById(R.id.btnConnect);
+        publish = (Button) findViewById(R.id.btnPublish);
+        publish.setOnClickListener(buttonPublish);
+        connect.setOnClickListener(buttonConnect);
+
+        pass = (EditText) findViewById(R.id.etPass);
+
+        orgId = (EditText) findViewById(R.id.etOrgId);
+        deviceType = (EditText) findViewById(R.id.etDevType);
+        deviceId = (EditText) findViewById(R.id.etDevId);
+        info = (TextView) findViewById(R.id.textInfo);
+
+
+
+        orgId.setText("p9p0l7");
+        deviceType.setText("android3");
+        deviceId.setText("333");
+        pass.setText("glNpI(@qHs2VlVS&ac");
+        boxSubscribe = (CheckBox) findViewById(R.id.checkboxSubscribe);
+
     }
 
     public IMqttToken connectDevice() throws MqttException {
         SocketFactory factory = handleActivate();
 
-        String clientID = "d:" + dev.getOrganization() + ":" + dev.getDeviceType() + ":" + dev.getDeviceID();
+        String organization = orgId.getText().toString();
+        String deviceT = deviceType.getText().toString();
+        String device_Id = deviceId.getText().toString();
+        String authorizationToken = pass.getText().toString();
+        String clientID = String.format("d:%s:%s:%s", organization, deviceT, device_Id);
+      //  String clientID = "d:" + dev.getOrganization() + ":" + dev.getDeviceType() + ":" + dev.getDeviceID();
         String connectionURI;
         if (factory == null) {
-            connectionURI = "tcp://" + dev.getOrganization() + IOT_ORGANIZATION_TCP;
+            connectionURI = "tcp://" + organization + IOT_ORGANIZATION_TCP;
         } else {
-            connectionURI = "ssl://" + dev.getOrganization() + IOT_ORGANIZATION_SSL;
+            connectionURI = "ssl://" + organization + IOT_ORGANIZATION_SSL;
         }
 
         if (!isMqttConnected()) {
+
             if (client != null) {
                 client.unregisterResources();
                 client = null;
             }
+        }
             client = new MqttAndroidClient(this, connectionURI, clientID);
             client.setCallback(mqttCallback);
 
             String username = IOT_DEVICE_USERNAME;
-            char[] password = dev.getAuthorizationToken().toCharArray();
+            char[] password = authorizationToken.toCharArray();
 
             MqttConnectOptions options = new MqttConnectOptions();
             options.setCleanSession(true);
@@ -88,7 +114,8 @@ public class MainActivity extends AppCompatActivity {
                 Log.e(TAG, "Exception caught while attempting to connect to server", e.getCause());
                 throw e;
             }
-        }
+
+
         return null;
     }
 
@@ -96,6 +123,17 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onSuccess(IMqttToken asyncActionToken) {
             Log.i(TAG, "Connected success: ");
+            String topic = "iot-2/cmd/+/fmt/json";
+            if (boxSubscribe.isChecked()) {
+                try {
+                    client.subscribe(topic,0);
+
+                    Log.i(TAG, "Subscribed");
+                } catch (MqttException e) {
+                    Log.i(TAG, "Subscribe failed");
+                    e.printStackTrace();
+                }
+            }
         }
 
         @Override
@@ -155,4 +193,34 @@ public class MainActivity extends AppCompatActivity {
 
         return connected;
     }
+
+    View.OnClickListener buttonConnect = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            try {
+                connectDevice();
+            } catch (MqttException e) {
+                e.printStackTrace();
+            }
+        }
+    };
+
+
+    View.OnClickListener buttonPublish = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+
+            String topic = "iot-2/evt/audio/fmt/json";
+            try {
+                client.publish(
+                        topic,
+                        "payload".getBytes("UTF-8"),
+                        1,
+                        false);
+                Log.i(TAG, "publish ");
+            } catch (MqttException | UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+        }
+    };
 }

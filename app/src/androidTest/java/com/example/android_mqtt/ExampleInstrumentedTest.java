@@ -1,4 +1,4 @@
-package com.example.android_mqtt_ssl;
+package com.example.android_mqtt;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

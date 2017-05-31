@@ -1,4 +1,4 @@
-package com.example.android_mqtt_ssl;
+package com.example.android_mqtt;
 
 import org.junit.Test;
 
