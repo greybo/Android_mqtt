@@ -191,7 +191,7 @@ public class MainActivity extends AppCompatActivity {
 //            factory = sslContext.getSocketFactory();
 
             SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
-            //LoggerUtility.info(CLASS_NAME, METHOD, "Provider: " + sslContext.getProvider().getName());
+           
             sslContext.init(null, null, null);
             factory = sslContext.getSocketFactory();
 
