@@ -1,15 +1,19 @@
 package com.example.android_mqtt;
 
+import android.support.constraint.solver.SolverVariable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
-import android.widget.ListView;
 import android.widget.TextView;
+
+import com.example.android_mqtt.model.Audio;
+import com.example.android_mqtt.model.Sound;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
 import org.eclipse.paho.client.mqttv3.IMqttActionListener;
@@ -21,19 +25,16 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.io.UnsupportedEncodingException;
-import java.security.KeyStore;
-import java.util.List;
+import java.util.ArrayList;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
 
 public class MainActivity extends AppCompatActivity {
-    private EditText pass, orgId, deviceType, deviceId;
+    private EditText token, orgId, deviceType, deviceId;
     private TextView info;
-    private Button connect, publish;
-    private CheckBox boxSubscribe;
+    private Button connectBtn, publishBtn;
+    private CheckBox boxSubscribe, boxSslOn;
 
     private static final String TAG = "log_tag";
     private static final String IOT_ORGANIZATION_TCP = ".messaging.internetofthings.ibmcloud.com:1883";
@@ -48,32 +49,46 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         info = (TextView) findViewById(R.id.textInfo);
-        connect = (Button) findViewById(R.id.btnConnect);
-        publish = (Button) findViewById(R.id.btnPublish);
-        publish.setOnClickListener(buttonPublish);
-        connect.setOnClickListener(buttonConnect);
+        connectBtn = (Button) findViewById(R.id.btnConnect);
+        publishBtn = (Button) findViewById(R.id.btnPublish);
+        publishBtn.setOnClickListener(publishListener);
+        connectBtn.setOnClickListener(connectListener);
 
-        pass = (EditText) findViewById(R.id.etPass);
+        token = (EditText) findViewById(R.id.etPass);
         orgId = (EditText) findViewById(R.id.etOrgId);
         deviceType = (EditText) findViewById(R.id.etDevType);
         deviceId = (EditText) findViewById(R.id.etDevId);
         info = (TextView) findViewById(R.id.textInfo);
 
-        orgId.setText("p9p0l7");
-        deviceType.setText("android3");
-        deviceId.setText("333");
-        pass.setText("glNpI(@qHs2VlVS&ac");
-        boxSubscribe = (CheckBox) findViewById(R.id.checkboxSubscribe);
+//        orgId.setText("p9p0l7");
+//        deviceType.setText("android3");
+//        deviceId.setText("333");
+//        token.setText("glNpI(@qHs2VlVS&ac");
 
+        orgId.setText("p9p0l7");
+        deviceType.setText("android");
+
+        deviceId.setText("1112");
+        token.setText("3z0ExN9CF!(Ne0EdpE");
+
+//        deviceId.setText("111");
+//        token.setText("kvHenx+*DxOuMilTFm");
+
+        boxSubscribe = (CheckBox) findViewById(R.id.checkboxSubscribe);
+        boxSslOn = (CheckBox) findViewById(R.id.checkboxSsl);
     }
 
     public IMqttToken connectDevice() throws MqttException {
-        SocketFactory factory = handleActivate();
+        SocketFactory factory = null;
+
+        if (boxSslOn.isChecked()) {
+            factory = getSocketFactory();
+        }
 
         String organization = orgId.getText().toString();
         String deviceT = deviceType.getText().toString();
         String device_Id = deviceId.getText().toString();
-        String authorizationToken = pass.getText().toString();
+        String authorizationToken = token.getText().toString();
         String clientID = String.format("d:%s:%s:%s", organization, deviceT, device_Id);
 
         String connectionURI;
@@ -84,38 +99,55 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (!isMqttConnected()) {
-
             if (client != null) {
                 client.unregisterResources();
                 client = null;
             }
+
+            client = new MqttAndroidClient(this, connectionURI, clientID);
+            client.setCallback(mqttCallback);
+
+            String username = IOT_DEVICE_USERNAME;
+            char[] password = authorizationToken.toCharArray();
+
+            MqttConnectOptions options = new MqttConnectOptions();
+            options.setCleanSession(true);
+            options.setUserName(username);
+            options.setPassword(password);
+
+            if (factory != null) {
+                options.setSocketFactory(factory);
+            }
+
+            Log.i(TAG, "Connecting to server: " + connectionURI);
+            Log.i(TAG, "ClientId: " + clientID);
+
+            try {
+                // connectBtn
+                client.connect(options, this, mqttActionListener);
+            } catch (MqttException e) {
+                Log.e(TAG, "Exception caught while attempting to connectBtn to server", e.getCause());
+                throw e;
+            }
+        } else {
+            IMqttToken token = client.disconnect();
+            token.setActionCallback(new IMqttActionListener() {
+                @Override
+                public void onSuccess(IMqttToken asyncActionToken) {
+                    info.setText("Disconnect:");
+                    Log.i(TAG, "Disconnect: ");
+                    try {
+                        connectDevice();
+                    } catch (MqttException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                @Override
+                public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+                }
+            });
         }
-        client = new MqttAndroidClient(this, connectionURI, clientID);
-        client.setCallback(mqttCallback);
-
-        String username = IOT_DEVICE_USERNAME;
-        char[] password = authorizationToken.toCharArray();
-
-        MqttConnectOptions options = new MqttConnectOptions();
-        options.setCleanSession(true);
-        options.setUserName(username);
-        options.setPassword(password);
-
-        if (factory != null) {
-            options.setSocketFactory(factory);
-        }
-
-        Log.i(TAG, "Connecting to server: " + connectionURI);
-        Log.i(TAG, "ClientId: " + clientID);
-
-        try {
-            // connect
-            client.connect(options, this, mqttActionListener);
-        } catch (MqttException e) {
-            Log.e(TAG, "Exception caught while attempting to connect to server", e.getCause());
-            throw e;
-        }
-
 
         return null;
     }
@@ -123,18 +155,17 @@ public class MainActivity extends AppCompatActivity {
     IMqttActionListener mqttActionListener = new IMqttActionListener() {
         @Override
         public void onSuccess(IMqttToken asyncActionToken) {
+
             Log.i(TAG, "Connected success: ");
             info.setText("Connected success: ");
-            String topic = "iot-2/cmd/#/fmt/json";
+            String topic = "iot-2/cmd/+/fmt/json";
+
             if (boxSubscribe.isChecked()) {
                 try {
                     client.subscribe(topic, 0);
-
                     Log.i(TAG, "Subscribed");
-
                 } catch (MqttException e) {
                     Log.i(TAG, "Subscribe failed");
-
                     e.printStackTrace();
                 }
             }
@@ -142,6 +173,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+            info.setText("onFailure:");
             Log.i(TAG, "onFailure: ");
         }
     };
@@ -149,39 +181,45 @@ public class MainActivity extends AppCompatActivity {
     MqttCallback mqttCallback = new MqttCallback() {
         @Override
         public void connectionLost(Throwable cause) {
+            info.setText("Connection lost:");
             Log.i(TAG, "connectionLost: ");
         }
 
         @Override
         public void messageArrived(String topic, MqttMessage message) throws Exception {
-            Log.i(TAG, "messageArrived: "+topic+" message: "+message);
+            Log.i(TAG, "messageArrived: " + topic + " message: " + message);
         }
 
         @Override
         public void deliveryComplete(IMqttDeliveryToken token) {
             try {
-                Log.i(TAG, "deliveryComplete: "+token.getMessage());
+                Log.i(TAG, "deliveryComplete: " + token.getMessage().toString());
             } catch (MqttException e) {
                 e.printStackTrace();
             }
         }
     };
 
-    private SocketFactory handleActivate() {
+    private SocketFactory getSocketFactory() {
         SocketFactory factory = null;
         try {
 
-            SSLContext sslContext;
-            KeyStore ks = KeyStore.getInstance("bks");
-            ks.load(this.getResources().openRawResource(R.raw.iot), "password".toCharArray());
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance("X509");
-            tmf.init(ks);
-            TrustManager[] tm = tmf.getTrustManagers();
-            sslContext = SSLContext.getInstance("TLSv1.2");
-            sslContext.init(null, tm, null);
-            factory = sslContext.getSocketFactory();
-        } catch (Exception e) {
+//            SSLContext sslContext;
+//            KeyStore ks = KeyStore.getInstance("bks");
+//            ks.load(this.getResources().openRawResource(R.raw.iot), "password".toCharArray());
+//            TrustManagerFactory tmf = TrustManagerFactory.getInstance("X509");
+//            tmf.init(ks);
+//            TrustManager[] tm = tmf.getTrustManagers();
+//            sslContext = SSLContext.getInstance("TLSv1.2");
+//            sslContext.init(null, tm, null);
+//            factory = sslContext.getSocketFactory();
 
+            SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
+            //LoggerUtility.info(CLASS_NAME, METHOD, "Provider: " + sslContext.getProvider().getName());
+            sslContext.init(null, null, null);
+            factory = sslContext.getSocketFactory();
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -202,7 +240,7 @@ public class MainActivity extends AppCompatActivity {
         return connected;
     }
 
-    View.OnClickListener buttonConnect = new View.OnClickListener() {
+    View.OnClickListener connectListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
             try {
@@ -210,37 +248,25 @@ public class MainActivity extends AppCompatActivity {
             } catch (MqttException e) {
                 e.printStackTrace();
             }
+
         }
     };
 
+    private String prepareJson() {
+        GsonBuilder builder = new GsonBuilder();
+        Gson gson = builder.create();
 
-    View.OnClickListener buttonPublish = new View.OnClickListener() {
+        Sound sound = new Sound();
+        // Log.i(TAG, "GSON: " + gson.toJson(sound));
+
+        return gson.toJson(sound);
+    }
+
+    View.OnClickListener publishListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-
             String topic = "iot-2/evt/audio/fmt/json";
-
-           String json="{\n" +
-                   "  \"data\": [\n" +
-                   "    {\n" +
-                   "      \"zcr\": 0.009765625,\n" +
-                   "      \"mfcc\": [\n" +
-                   "        -544.4432787871278,\n" +
-                   "        -556.3128752933909,\n" +
-                   "        -407.4832942024688,\n" +
-                   "        -269.775470084645,\n" +
-                   "        -149.72393603575634,\n" +
-                   "        -89.44205880437549,\n" +
-                   "        -81.03000790354855,\n" +
-                   "        -101.60580005563173,\n" +
-                   "        -111.56897345800866,\n" +
-                   "        -92.6221863470417,\n" +
-                   "        -46.397159840702564,\n" +
-                   "        -0.5242996098177828,\n" +
-                   "        16.885874747546353,\n" +
-                   "        -9.774112580427841\n" +
-                   "      ]\n" +
-                   "    }";
+            String json = prepareJson();
             try {
                 client.publish(
                         topic,

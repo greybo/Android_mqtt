@@ -87,13 +87,28 @@
             android:layout_weight="0.5"
             android:hint="" />
     </LinearLayout>
-
-    <CheckBox
-        android:id="@+id/checkboxSubscribe"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="5dp"
-        android:text=" Subscribe" />
+        android:orientation="horizontal">
+        <CheckBox
+            android:id="@+id/checkboxSubscribe"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:text=" Subscribe"
+            android:layout_weight="1"/>
+
+        <CheckBox
+            android:id="@+id/checkboxSsl"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:text="SSL on"
+            android:layout_weight="1"/>
+
+    </LinearLayout>
+
 
     <Button
         android:id="@+id/btnConnect"
