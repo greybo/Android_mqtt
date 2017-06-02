@@ -19,11 +19,6 @@ public class Audio {
 
         this.mfcc = new byte[14];
         new Random().nextBytes(mfcc);
-
-//        UUID uuid = UUID.randomUUID();
-//        long hi = uuid.getMostSignificantBits();
-//        long lo = uuid.getLeastSignificantBits();
-//        this.mfcc= ByteBuffer.allocate(16).putLong(hi).putLong(lo).array();
     }
 
     @Override
