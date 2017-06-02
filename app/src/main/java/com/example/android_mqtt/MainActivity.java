@@ -1,6 +1,5 @@
 package com.example.android_mqtt;
 
-import android.support.constraint.solver.SolverVariable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -10,7 +9,6 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import com.example.android_mqtt.model.Audio;
 import com.example.android_mqtt.model.Sound;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -25,8 +23,6 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
 
@@ -34,9 +30,9 @@ public class MainActivity extends AppCompatActivity {
     private EditText token, orgId, deviceType, deviceId;
     private TextView info;
     private Button connectBtn, publishBtn;
-    private CheckBox boxSubscribe, boxSslOn;
+    private CheckBox boxSslOn;
 
-    private static final String TAG = "log_tag";
+    private static final String TAG = "mqtt_android";
     private static final String IOT_ORGANIZATION_TCP = ".messaging.internetofthings.ibmcloud.com:1883";
     private static final String IOT_ORGANIZATION_SSL = ".messaging.internetofthings.ibmcloud.com:8883";
     private static final String IOT_DEVICE_USERNAME = "use-token-auth";
@@ -60,21 +56,12 @@ public class MainActivity extends AppCompatActivity {
         deviceId = (EditText) findViewById(R.id.etDevId);
         info = (TextView) findViewById(R.id.textInfo);
 
-//        orgId.setText("p9p0l7");
-//        deviceType.setText("android3");
-//        deviceId.setText("333");
-//        token.setText("glNpI(@qHs2VlVS&ac");
-
         orgId.setText("p9p0l7");
-        deviceType.setText("android");
+        deviceType.setText("android3");
+        deviceId.setText("333");
+        token.setText("glNpI(@qHs2VlVS&ac");
 
-        deviceId.setText("1112");
-        token.setText("3z0ExN9CF!(Ne0EdpE");
 
-//        deviceId.setText("111");
-//        token.setText("kvHenx+*DxOuMilTFm");
-
-        boxSubscribe = (CheckBox) findViewById(R.id.checkboxSubscribe);
         boxSslOn = (CheckBox) findViewById(R.id.checkboxSsl);
     }
 
@@ -86,10 +73,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         String organization = orgId.getText().toString();
-        String deviceT = deviceType.getText().toString();
+        String device_type = this.deviceType.getText().toString();
         String device_Id = deviceId.getText().toString();
         String authorizationToken = token.getText().toString();
-        String clientID = String.format("d:%s:%s:%s", organization, deviceT, device_Id);
+        String clientID = String.format("d:%s:%s:%s", organization, device_type, device_Id);
 
         String connectionURI;
         if (factory == null) {
@@ -155,20 +142,9 @@ public class MainActivity extends AppCompatActivity {
     IMqttActionListener mqttActionListener = new IMqttActionListener() {
         @Override
         public void onSuccess(IMqttToken asyncActionToken) {
-
             Log.i(TAG, "Connected success: ");
             info.setText("Connected success: ");
-            String topic = "iot-2/cmd/+/fmt/json";
 
-            if (boxSubscribe.isChecked()) {
-                try {
-                    client.subscribe(topic, 0);
-                    Log.i(TAG, "Subscribed");
-                } catch (MqttException e) {
-                    Log.i(TAG, "Subscribe failed");
-                    e.printStackTrace();
-                }
-            }
         }
 
         @Override

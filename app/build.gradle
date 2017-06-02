@@ -4,7 +4,7 @@ android {
     compileSdkVersion 25
     buildToolsVersion "25.0.3"
     defaultConfig {
-        applicationId "com.example.android_mqtt_ssl"
+        applicationId "com.example.android_mqtt"
         minSdkVersion 15
         targetSdkVersion 25
         versionCode 1
