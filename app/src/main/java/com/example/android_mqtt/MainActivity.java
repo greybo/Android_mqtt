@@ -23,6 +23,14 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.io.UnsupportedEncodingException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
 
@@ -61,8 +69,8 @@ public class MainActivity extends AppCompatActivity {
         deviceId.setText("333");
         token.setText("glNpI(@qHs2VlVS&ac");
 
-
         boxSslOn = (CheckBox) findViewById(R.id.checkboxSsl);
+
     }
 
     public IMqttToken connectDevice() throws MqttException {
@@ -191,7 +199,7 @@ public class MainActivity extends AppCompatActivity {
 //            factory = sslContext.getSocketFactory();
 
             SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
-           
+
             sslContext.init(null, null, null);
             factory = sslContext.getSocketFactory();
 
@@ -212,7 +220,6 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             // swallowing the exception as it means the client is not connected
         }
-
         return connected;
     }
 
@@ -224,36 +231,48 @@ public class MainActivity extends AppCompatActivity {
             } catch (MqttException e) {
                 e.printStackTrace();
             }
-
         }
     };
 
     private String prepareJson() {
         GsonBuilder builder = new GsonBuilder();
         Gson gson = builder.create();
-
         Sound sound = new Sound();
-        // Log.i(TAG, "GSON: " + gson.toJson(sound));
-
         return gson.toJson(sound);
     }
 
     View.OnClickListener publishListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            String topic = "iot-2/evt/audio/fmt/json";
-            String json = prepareJson();
-            try {
-                client.publish(
-                        topic,
-                        json.getBytes("UTF-8"),
-                        1,
-                        false);
-                Log.i(TAG, "publish ");
-            } catch (MqttException | UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
+            startSending();
         }
     };
 
+    private void startSending() {
+        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+        Runnable task = new Runnable() {
+            @Override
+            public void run() {
+                publis();
+            }
+        };
+        int initialDelay = 0;
+        int period = 1;
+        executor.scheduleAtFixedRate(task, initialDelay, period, TimeUnit.SECONDS);
+    }
+
+    private void publis() {
+        String topic = "iot-2/evt/audio/fmt/json";
+        String json = prepareJson();
+        try {
+            client.publish(
+                    topic,
+                    json.getBytes("UTF-8"),
+                    1,
+                    false);
+            Log.i(TAG, "publish ");
+        } catch (MqttException | UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+    }
 }
