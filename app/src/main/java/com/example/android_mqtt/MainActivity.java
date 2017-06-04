@@ -256,9 +256,7 @@ public class MainActivity extends AppCompatActivity {
                 publis();
             }
         };
-        int initialDelay = 0;
-        int period = 1;
-        executor.scheduleAtFixedRate(task, initialDelay, period, TimeUnit.SECONDS);
+        executor.scheduleAtFixedRate(task, 0, 1, TimeUnit.SECONDS);
     }
 
     private void publis() {
