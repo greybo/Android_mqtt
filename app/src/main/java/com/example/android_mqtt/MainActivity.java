@@ -256,7 +256,7 @@ public class MainActivity extends AppCompatActivity {
                 publis();
             }
         };
-        executor.scheduleAtFixedRate(task, 0, 1, TimeUnit.SECONDS);
+        executor.scheduleWithFixedDelay(task, 0, 1, TimeUnit.SECONDS);
     }
 
     private void publis() {
