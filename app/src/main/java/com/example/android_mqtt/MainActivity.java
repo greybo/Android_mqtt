@@ -1,5 +1,6 @@
 package com.example.android_mqtt;
 
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -23,10 +24,7 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.io.UnsupportedEncodingException;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -244,33 +242,68 @@ public class MainActivity extends AppCompatActivity {
     View.OnClickListener publishListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            startSending();
+            //startSending();
+            DetectorThread thread = new DetectorThread();
+            thread.start();
         }
     };
 
-    private void startSending() {
-        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+//    private void startSending() {
+//        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+//        Runnable task = new Runnable() {
+//            @Override
+//            public void run() {
+//                publis();
+//            }
+//        };
+//        executor.scheduleWithFixedDelay(task, 0, 1, TimeUnit.SECONDS);
+//    }
+
+    //    private void publis() {
+//        String topic = "iot-2/evt/audio/fmt/json";
+//        String json = prepareJson();
+//        try {
+//            client.publish(
+//                    topic,
+//                    json.getBytes("UTF-8"),
+//                    1,
+//                    false);
+//            Log.i(TAG, "publish ");
+//        } catch (MqttException | UnsupportedEncodingException e) {
+//            e.printStackTrace();
+//        }
+//    }
+   private class DetectorThread {
+       private ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+
+        private void start() {
+            executor.scheduleWithFixedDelay(task, 0, 1, TimeUnit.SECONDS);
+        }
+
+        private void stop() {
+            executor=null;
+        }
+
         Runnable task = new Runnable() {
             @Override
             public void run() {
                 publis();
             }
         };
-        executor.scheduleWithFixedDelay(task, 0, 1, TimeUnit.SECONDS);
-    }
 
-    private void publis() {
-        String topic = "iot-2/evt/audio/fmt/json";
-        String json = prepareJson();
-        try {
-            client.publish(
-                    topic,
-                    json.getBytes("UTF-8"),
-                    1,
-                    false);
-            Log.i(TAG, "publish ");
-        } catch (MqttException | UnsupportedEncodingException e) {
-            e.printStackTrace();
+        private void publis() {
+            String topic = "iot-2/evt/audio/fmt/json";
+            String json = prepareJson();
+            try {
+                client.publish(
+                        topic,
+                        json.getBytes("UTF-8"),
+                        1,
+                        false);
+                Log.i(TAG, "publish ");
+            } catch (MqttException | UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

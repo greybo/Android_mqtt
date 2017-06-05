@@ -2,10 +2,8 @@ package com.example.android_mqtt.model;
 
 import com.google.gson.annotations.SerializedName;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Random;
-import java.util.UUID;
 
 public class Audio {
 
