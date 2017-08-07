@@ -116,7 +116,6 @@ public class MainActivity extends AppCompatActivity {
             Log.i(TAG, "ClientId: " + clientID);
 
             try {
-                // connectBtn
                 client.connect(options, this, mqttActionListener);
             } catch (MqttException e) {
                 Log.e(TAG, "Exception caught while attempting to connectBtn to server", e.getCause());
@@ -243,8 +242,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onClick(View v) {
             //startSending();
-            DetectorThread thread = new DetectorThread();
-            thread.start();
+      
         }
     };
 
@@ -260,7 +258,7 @@ public class MainActivity extends AppCompatActivity {
 //    }
 
     //    private void publis() {
-//        String topic = "iot-2/evt/audio/fmt/json";
+//        String topic = "iot-2/evt/data/fmt/json";
 //        String json = prepareJson();
 //        try {
 //            client.publish(
@@ -273,7 +271,7 @@ public class MainActivity extends AppCompatActivity {
 //            e.printStackTrace();
 //        }
 //    }
-   private class DetectorThread {
+   private class startSending {
        private ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
         private void start() {
@@ -292,7 +290,7 @@ public class MainActivity extends AppCompatActivity {
         };
 
         private void publis() {
-            String topic = "iot-2/evt/audio/fmt/json";
+            String topic = "iot-2/evt/data/fmt/json";
             String json = prepareJson();
             try {
                 client.publish(
