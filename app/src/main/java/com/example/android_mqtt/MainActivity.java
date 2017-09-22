@@ -246,31 +246,6 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-//    private void startSending() {
-//        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-//        Runnable task = new Runnable() {
-//            @Override
-//            public void run() {
-//                publis();
-//            }
-//        };
-//        executor.scheduleWithFixedDelay(task, 0, 1, TimeUnit.SECONDS);
-//    }
-
-    //    private void publis() {
-//        String topic = "iot-2/evt/data/fmt/json";
-//        String json = prepareJson();
-//        try {
-//            client.publish(
-//                    topic,
-//                    json.getBytes("UTF-8"),
-//                    1,
-//                    false);
-//            Log.i(TAG, "publish ");
-//        } catch (MqttException | UnsupportedEncodingException e) {
-//            e.printStackTrace();
-//        }
-//    }
    private class startSending {
        private ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
@@ -279,7 +254,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         private void stop() {
-            executor=null;
+          
         }
 
         Runnable task = new Runnable() {
